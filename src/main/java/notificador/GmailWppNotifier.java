@@ -6,6 +6,9 @@ import jakarta.mail.event.MessageCountEvent;
 import org.eclipse.angus.mail.imap.IMAPFolder;
 
 import java.io.IOException;
+import java.io.Reader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
@@ -46,10 +49,12 @@ public class GmailWppNotifier {
     /** true = el programa termina después de enviar el primer WhatsApp. false = sigue escuchando siempre. */
     private static final boolean TERMINAR_AL_ENVIAR = true;
 
-    private static final String GMAIL_USER = "example@gmail.com";
-    private static final String GMAIL_APP_PASSWORD = "kujcfskjgsadkjhdsakjh";
-    private static final String WPP_PHONE = "+52811234567";
-    private static final String CALLMEBOT_APIKEY = "883168923";
+    private static final Properties CONFIG = cargarConfig();
+
+    private static final String GMAIL_USER = CONFIG.getProperty("GMAIL_USER");
+    private static final String GMAIL_APP_PASSWORD = CONFIG.getProperty("GMAIL_APP_PASSWORD");
+    private static final String WPP_PHONE = CONFIG.getProperty("WPP_PHONE");
+    private static final String CALLMEBOT_APIKEY = CONFIG.getProperty("CALLMEBOT_APIKEY");
     private static boolean correoCorrecto = false;
 
     // Ajustes de envío a CallMeBot
@@ -80,6 +85,20 @@ public class GmailWppNotifier {
     private static final AtomicInteger FALLOS_SEGUIDOS = new AtomicInteger(0);
 
     private enum ResultadoEnvio { ENVIADO, ERROR_PERMANENTE, FALLIDO }
+
+    /** Lee config.properties de la carpeta donde se ejecuta el programa, si existe. */
+    private static Properties cargarConfig() {
+        Properties p = new Properties();
+        Path archivo = Path.of("config.properties");
+        if (Files.exists(archivo)) {
+            try (Reader r = Files.newBufferedReader(archivo, StandardCharsets.UTF_8)) {
+                p.load(r);
+            } catch (IOException e) {
+                throw new IllegalStateException("No se pudo leer config.properties: " + e.getMessage(), e);
+            }
+        }
+        return p;
+    }
 
     // ───────────────────────── Programa principal ─────────────────────────
 
